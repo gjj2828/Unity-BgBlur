@@ -97,6 +97,8 @@ public class Blur : MonoBehaviour
             Graphics.Blit(temp2, temp1, m_BlurMat);
 
             Graphics.Blit(temp1, m_RT);
+
+            m_RI.material = m_OriMat;
             
             m_IsBluring = false;
         }
