@@ -110,9 +110,9 @@ Shader "Hidden/Grab"
                 clip (color.a - 0.001);
                 #endif
 
-                return color;
+                //return color;
 
-                //return fixed4(0,0,0,0);
+                return fixed4(0,0,0,0);
             }
         ENDCG
         }

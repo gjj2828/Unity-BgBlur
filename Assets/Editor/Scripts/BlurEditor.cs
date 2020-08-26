@@ -15,5 +15,9 @@ public class BlurEditor : Editor
         {
             script.DoBlur();
         }
+        if(GUILayout.Button("ClearBlur"))
+        {
+            script.ClearBlur();
+        }
     }
 }

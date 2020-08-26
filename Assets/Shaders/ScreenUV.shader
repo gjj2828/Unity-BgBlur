@@ -20,6 +20,8 @@ Shader "UI/ScreenUV"
         _ColorMask ("Color Mask", Float) = 15
 
         [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip ("Use Alpha Clip", Float) = 0
+
+        [HideInInspector] _OffsetSize("Offset and Size", Vector) = (0.0, 0.0, 1.0, 1.0)
     }
 
     SubShader
@@ -75,17 +77,22 @@ Shader "UI/ScreenUV"
             {
                 float4 vertex   : SV_POSITION;
                 fixed4 color    : COLOR;
-                // float2 texcoord  : TEXCOORD0;
-                float4 texcoord  : TEXCOORD0;
+                float2 texcoord  : TEXCOORD0;
+                //float4 texcoord  : TEXCOORD0;
                 float4 worldPosition : TEXCOORD1;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
             sampler2D _MainTex;
+            sampler2D _BlurTex;
             fixed4 _Color;
             fixed4 _TextureSampleAdd;
             float4 _ClipRect;
             float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
+            float4 _BlurTex_ST;
+            float4 _BlurTex_TexelSize;
+            float4 _OffsetSize;
 
             v2f vert(appdata_t v)
             {
@@ -95,9 +102,25 @@ Shader "UI/ScreenUV"
                 OUT.worldPosition = v.vertex;
                 OUT.vertex = UnityObjectToClipPos(OUT.worldPosition);
 
-                // OUT.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
-                OUT.texcoord.xy = (float2(OUT.vertex.x, OUT.vertex.y) + OUT.vertex.w) * 0.5;
-            	OUT.texcoord.zw = OUT.vertex.zw;
+                OUT.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+                OUT.texcoord.x = _OffsetSize.x + OUT.texcoord.x * _OffsetSize.z;
+                OUT.texcoord.y = _OffsetSize.y + OUT.texcoord.y * _OffsetSize.w;
+
+            //    float scale = 1.0;
+            //    if (_ProjectionParams.x < 0)
+            //    {
+            //        scale *= -1.0;
+            //    }
+            //#if UNITY_UV_STARTS_AT_TOP
+            //    if (_MainTex_TexelSize.y < 0)
+            //    {
+            //        scale *= -1.0;
+            //    }
+            //#endif
+            //    OUT.texcoord.xy = (float2(OUT.vertex.x, OUT.vertex.y * scale) + OUT.vertex.w) * 0.5;
+            //	OUT.texcoord.zw = OUT.vertex.zw;
+
+            //    //OUT.texcoord = ComputeGrabScreenPos(OUT.vertex);
 
                 OUT.color = v.color * _Color;
                 return OUT;
@@ -105,8 +128,16 @@ Shader "UI/ScreenUV"
 
             fixed4 frag(v2f IN) : SV_Target
             {
-                // half4 color = (tex2D(_MainTex, IN.texcoord) + _TextureSampleAdd) * IN.color;
-            	half4 color = (tex2Dproj(_MainTex, UNITY_PROJ_COORD(IN.texcoord)) + _TextureSampleAdd) * IN.color;
+                 half4 color = (tex2D(_MainTex, IN.texcoord) + _TextureSampleAdd) * IN.color;
+            	// //half4 color = (tex2Dproj(_MainTex, UNITY_PROJ_COORD(IN.texcoord)) + _TextureSampleAdd) * IN.color;
+                // //float2 uv = IN.texcoord.xy / IN.texcoord.w;
+                // //uv.y = uv.y / 2.0;
+                // //half4 color = (tex2D(_MainTex, uv) + _TextureSampleAdd) * IN.color;
+
+                // half4 color = tex2Dproj(_BlurTex, UNITY_PROJ_COORD(IN.texcoord)) * IN.color;
+                // //float2 a = IN.texcoord.xy / IN.texcoord.w;
+                // ////a.y = a.y / 2;
+                // //half4 color = tex2D(_BlurTex, a) * IN.color;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
